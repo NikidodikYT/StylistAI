@@ -1,100 +1,36 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export function AnimatedBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    // Set canvas size
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resizeCanvas()
-    window.addEventListener("resize", resizeCanvas)
-
-    // Particle system
-    const particles: Array<{
-      x: number
-      y: number
-      vx: number
-      vy: number
-      size: number
-      opacity: number
-    }> = []
-
-    // Create particles
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 3 + 1,
-        opacity: Math.random() * 0.5 + 0.2,
-      })
-    }
-
-    // Animation loop
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Update and draw particles
-      particles.forEach((particle, i) => {
-        particle.x += particle.vx
-        particle.y += particle.vy
-
-        // Wrap around edges
-        if (particle.x < 0) particle.x = canvas.width
-        if (particle.x > canvas.width) particle.x = 0
-        if (particle.y < 0) particle.y = canvas.height
-        if (particle.y > canvas.height) particle.y = 0
-
-        // Draw particle
-        ctx.beginPath()
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(100, 150, 255, ${particle.opacity})`
-        ctx.fill()
-
-        // Draw connections
-        particles.slice(i + 1).forEach((otherParticle) => {
-          const dx = particle.x - otherParticle.x
-          const dy = particle.y - otherParticle.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
-
-          if (distance < 150) {
-            ctx.beginPath()
-            ctx.moveTo(particle.x, particle.y)
-            ctx.lineTo(otherParticle.x, otherParticle.y)
-            ctx.strokeStyle = `rgba(100, 150, 255, ${0.2 * (1 - distance / 150)})`
-            ctx.lineWidth = 1
-            ctx.stroke()
-          }
-        })
-      })
-
-      requestAnimationFrame(animate)
-    }
-
-    animate()
-
-    return () => {
-      window.removeEventListener("resize", resizeCanvas)
-    }
+    setMounted(true)
   }, [])
 
+  if (!mounted) return null
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none opacity-30 dark:opacity-20"
-      aria-hidden="true"
-    />
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {theme === "dark" && (
+        <>
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+        </>
+      )}
+
+      {theme === "light" && (
+        <>
+          <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+          <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
+          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-amber-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-6000" />
+        </>
+      )}
+    </div>
   )
 }

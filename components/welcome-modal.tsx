@@ -1,96 +1,110 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Sparkles, Zap, Heart, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Sparkles, Shield } from "lucide-react"
 
 export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false)
+  const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
-    // Check if user has seen the welcome modal
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome")
-    if (!hasSeenWelcome) {
-      // Show modal after a short delay
-      setTimeout(() => setIsOpen(true), 500)
+    const hasAccepted = localStorage.getItem("privacy-accepted")
+    if (!hasAccepted) {
+      setIsOpen(true)
     }
   }, [])
 
-  const handleClose = () => {
-    localStorage.setItem("hasSeenWelcome", "true")
-    setIsOpen(false)
+  const handleAccept = () => {
+    if (accepted) {
+      localStorage.setItem("privacy-accepted", "true")
+      setIsOpen(false)
+    }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={handleClose} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl glass-strong rounded-3xl p-8 md:p-12 shadow-2xl animate-bounce-in">
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent/10 transition-all duration-200 group"
-          aria-label="Закрыть"
-        >
-          <X className="h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors" />
-        </button>
-
-        {/* Decorative gradient orb */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br from-accent via-accent-secondary to-accent-tertiary opacity-20 blur-3xl animate-pulse-glow" />
-
-        {/* Content */}
-        <div className="relative text-center space-y-6">
-          {/* Icon */}
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-accent via-accent-secondary to-accent-tertiary p-0.5 animate-rotate-slow">
-            <div className="w-full h-full rounded-2xl bg-background flex items-center justify-center">
-              <Sparkles className="h-10 w-10 text-accent" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+      <Card className="max-w-2xl mx-4 p-8 bg-gradient-to-br from-[#0f1f3a] to-[#0a1628] border-cyan-500/30 shadow-2xl animate-scale-in">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-full bg-cyan-500/20 animate-float">
+              <Sparkles className="w-8 h-8 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-white">Добро пожаловать в StylistAI!</h2>
+              <p className="text-cyan-400 text-sm mt-1">Ваш персональный AI-стилист</p>
             </div>
           </div>
+        </div>
 
-          {/* Title */}
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Добро пожаловать в <span className="gradient-text-animated">StylistAI</span>
-          </h2>
-
-          {/* Description */}
-          <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Ваш персональный ИИ-стилист готов помочь создать идеальные образы. Получайте рекомендации, анализируйте фото
-            и находите вдохновение!
-          </p>
-
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-            <FeatureItem icon={Zap} title="Умный чат" description="Общайтесь с AI" />
-            <FeatureItem icon={Heart} title="Избранное" description="Сохраняйте образы" />
-            <FeatureItem icon={TrendingUp} title="Каталог" description="Тысячи луков" />
+        <div className="space-y-6 mb-8">
+          <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-cyan-400" />
+              Что мы предлагаем:
+            </h3>
+            <ul className="space-y-2 text-gray-300">
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-1">✓</span>
+                <span>Персональные рекомендации по стилю на основе AI</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-1">✓</span>
+                <span>Анализ вашего гардероба и подбор образов</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-1">✓</span>
+                <span>Каталог готовых луков для любого случая</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-1">✓</span>
+                <span>Сохранение избранных образов</span>
+              </li>
+            </ul>
           </div>
 
-          {/* CTA Button */}
+          <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+            <h3 className="text-lg font-semibold text-white mb-2">Политика конфиденциальности</h3>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Мы ценим вашу конфиденциальность. Все данные обрабатываются в соответствии с GDPR. Мы используем cookies
+              для улучшения работы сайта и персонализации рекомендаций. Ваши фотографии и данные не передаются третьим
+              лицам и используются только для генерации стилистических рекомендаций.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <Checkbox
+              id="accept"
+              checked={accepted}
+              onCheckedChange={(checked) => setAccepted(checked as boolean)}
+              className="mt-1 border-amber-500/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+            />
+            <label htmlFor="accept" className="text-sm text-gray-300 cursor-pointer leading-relaxed">
+              Я принимаю политику конфиденциальности и даю согласие на обработку персональных данных. Я понимаю, что без
+              принятия этих условий я не смогу пользоваться сервисом.
+            </label>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
           <Button
-            onClick={handleClose}
-            size="lg"
-            className="magnetic-button bg-gradient-to-r from-accent via-accent-secondary to-accent-tertiary text-accent-foreground border-0 shadow-lg shadow-accent/30 mt-6"
+            onClick={handleAccept}
+            disabled={!accepted}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] group"
           >
-            Начать работу
+            <Sparkles className="mr-2 h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
+            Начать пользоваться
           </Button>
         </div>
-      </div>
-    </div>
-  )
-}
 
-function FeatureItem({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-accent/5 transition-all duration-300 group">
-      <div className="p-3 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-        <Icon className="h-5 w-5 text-accent" />
-      </div>
-      <h3 className="font-semibold text-sm">{title}</h3>
-      <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-gray-500 text-center mt-4">
+          Нажимая кнопку, вы подтверждаете, что прочитали и согласны с условиями
+        </p>
+      </Card>
     </div>
   )
 }

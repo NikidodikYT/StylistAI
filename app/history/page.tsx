@@ -1,152 +1,132 @@
 "use client"
 
-import { MessageSquare, Camera, Heart, Clock } from "lucide-react"
-import { EmptyState } from "@/components/empty-state"
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Navigation } from "@/components/navigation"
+import { AnimatedBackground } from "@/components/animated-background"
+import { History, Trash2, Calendar, MessageSquare, ImageIcon } from "lucide-react"
+import { toast } from "sonner"
 
-type HistoryItem = {
+interface HistoryItem {
   id: string
-  type: "chat" | "analysis" | "favorite"
-  title: string
-  description: string
-  timestamp: Date
+  type: "chat" | "analysis"
+  content: string
   image?: string
+  timestamp: number
 }
 
-const mockHistory: HistoryItem[] = [
-  {
-    id: "1",
-    type: "chat",
-    title: "Консультация по летнему гардеробу",
-    description: "Обсудили базовые вещи для летнего сезона и цветовую палитру",
-    timestamp: new Date(2025, 1, 8, 14, 30),
-  },
-  {
-    id: "2",
-    type: "analysis",
-    title: "Анализ делового образа",
-    description: "Оценка 8.5/10 • Стиль: Современный минимализм",
-    timestamp: new Date(2025, 1, 7, 10, 15),
-    image: "/minimalist-black-outfit.jpg",
-  },
-  {
-    id: "3",
-    type: "favorite",
-    title: "Добавлено в избранное",
-    description: "Повседневный бежевый лук от H&M",
-    timestamp: new Date(2025, 1, 6, 16, 45),
-    image: "/casual-beige-outfit.jpg",
-  },
-  {
-    id: "4",
-    type: "chat",
-    title: "Подбор аксессуаров",
-    description: "Рекомендации по выбору сумки и обуви для офисного стиля",
-    timestamp: new Date(2025, 1, 5, 11, 20),
-  },
-  {
-    id: "5",
-    type: "analysis",
-    title: "Анализ уличного стиля",
-    description: "Оценка 7.8/10 • Стиль: Стрит",
-    timestamp: new Date(2025, 1, 4, 13, 0),
-    image: "/street-style-outfit.png",
-  },
-]
-
 export default function HistoryPage() {
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "chat":
-        return MessageSquare
-      case "analysis":
-        return Camera
-      case "favorite":
-        return Heart
-      default:
-        return Clock
+  const [history, setHistory] = useState<HistoryItem[]>([])
+
+  useEffect(() => {
+    const saved = localStorage.getItem("stylist-history")
+    if (saved) {
+      setHistory(JSON.parse(saved))
     }
+  }, [])
+
+  const deleteItem = (id: string) => {
+    const updated = history.filter((item) => item.id !== id)
+    setHistory(updated)
+    localStorage.setItem("stylist-history", JSON.stringify(updated))
+    toast.success("Удалено из истории")
   }
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "chat":
-        return "Чат"
-      case "analysis":
-        return "Анализ"
-      case "favorite":
-        return "Избранное"
-      default:
-        return ""
-    }
+  const clearAll = () => {
+    setHistory([])
+    localStorage.removeItem("stylist-history")
+    toast.success("История очищена")
   }
 
   return (
-    <div className="min-h-screen pt-16 animate-fade-in">
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold tracking-tight">История</h1>
-          <p className="mt-2 text-muted-foreground">Все ваши действия и запросы в одном месте</p>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <AnimatedBackground />
+
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-blob" />
+        <div className="absolute top-40 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
+      </div>
+
+      <Navigation />
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl animate-fade-in relative z-10">
+        <div className="mb-8 flex items-center justify-between animate-fade-in-down">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-full bg-gradient-purple-pink animate-float shadow-lg">
+              <History className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">История</h1>
+              <p className="text-muted-foreground">Ваши прошлые консультации и анализы</p>
+            </div>
+          </div>
+          {history.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={clearAll}
+              className="hover:bg-destructive/10 hover:text-destructive bg-transparent"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Очистить все
+            </Button>
+          )}
         </div>
 
-        {mockHistory.length === 0 ? (
-          <EmptyState
-            icon={Clock}
-            title="История пуста"
-            description="Начните использовать StylistAI, и здесь появится история ваших действий"
-          />
+        {history.length === 0 ? (
+          <Card className="p-12 text-center bg-card/50 backdrop-blur-sm border-border animate-scale-in">
+            <History className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">История пуста</h3>
+            <p className="text-muted-foreground mb-6">Начните общаться с AI-стилистом, чтобы увидеть историю здесь</p>
+            <Button
+              onClick={() => (window.location.href = "/stylist")}
+              className="bg-gradient-purple-pink hover:opacity-90 text-white"
+            >
+              Перейти к AI Стилисту
+            </Button>
+          </Card>
         ) : (
           <div className="space-y-4">
-            {mockHistory.map((item, index) => {
-              const Icon = getIcon(item.type)
-              return (
-                <div
-                  key={item.id}
-                  className="flex gap-4 rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:border-accent/50 hover:shadow-lg hover:-translate-y-1 animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  {item.image ? (
-                    <img
-                      src={item.image || "/placeholder.svg"}
-                      alt=""
-                      className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover transition-all duration-300 hover:scale-110 hover:shadow-md"
-                    />
-                  ) : (
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted transition-all duration-300 hover:bg-accent/10 group">
-                      <Icon
-                        className="h-8 w-8 text-muted-foreground transition-all duration-300 group-hover:text-accent group-hover:scale-110"
-                        aria-hidden="true"
-                      />
-                    </div>
-                  )}
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent transition-all duration-200 hover:bg-accent/20">
-                            {getTypeLabel(item.type)}
-                          </span>
-                        </div>
-                        <h3 className="mt-2 font-semibold transition-colors duration-200 hover:text-accent">
-                          {item.title}
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                    </div>
-
-                    <time className="mt-2 block text-xs text-muted-foreground transition-colors duration-200 hover:text-accent">
-                      {item.timestamp.toLocaleDateString("ru-RU", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
+            {history.map((item, index) => (
+              <Card
+                key={item.id}
+                className="p-6 bg-card/50 backdrop-blur-sm border-border hover:shadow-lg transition-all duration-300 animate-fade-in-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    {item.type === "chat" ? (
+                      <MessageSquare className="h-5 w-5 text-primary" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-primary" />
+                    )}
                   </div>
+                  <div className="flex-1">
+                    {item.image && (
+                      <img
+                        src={item.image || "/placeholder.svg"}
+                        alt="History"
+                        className="w-32 h-32 object-cover rounded-lg mb-3 shadow-md"
+                      />
+                    )}
+                    <p className="text-sm mb-2">{item.content}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(item.timestamp).toLocaleString("ru-RU")}
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => deleteItem(item.id)}
+                    className="hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              )
-            })}
+              </Card>
+            ))}
           </div>
         )}
       </div>

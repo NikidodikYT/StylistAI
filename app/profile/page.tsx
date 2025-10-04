@@ -1,166 +1,182 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Bell, Moon, Sun, LogOut, Save } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Navigation } from "@/components/navigation"
+import { AnimatedBackground } from "@/components/animated-background"
+import { User, Mail, Calendar, Save, Edit2 } from "lucide-react"
+import { toast } from "sonner"
+
+interface UserProfile {
+  name: string
+  email: string
+  joinDate: string
+  preferences: {
+    style: string
+    colors: string[]
+    occasions: string[]
+  }
+}
 
 export default function ProfilePage() {
-  const { theme, setTheme } = useTheme()
-  const [name, setName] = useState("Анна Иванова")
-  const [email, setEmail] = useState("anna@example.com")
-  const [notifications, setNotifications] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [profile, setProfile] = useState<UserProfile>({
+    name: "Пользователь",
+    email: "user@example.com",
+    joinDate: new Date().toISOString(),
+    preferences: {
+      style: "Современный минимализм",
+      colors: ["Черный", "Белый", "Серый"],
+      occasions: ["Офис", "Повседневный", "Вечерний"],
+    },
+  })
+
+  useEffect(() => {
+    const saved = localStorage.getItem("user-profile")
+    if (saved) {
+      setProfile(JSON.parse(saved))
+    }
+  }, [])
 
   const handleSave = () => {
-    // Save profile logic here
-    alert("Профиль сохранен!")
+    localStorage.setItem("user-profile", JSON.stringify(profile))
+    setIsEditing(false)
+    toast.success("Профиль сохранен!")
   }
 
   return (
-    <div className="min-h-screen pt-16 animate-fade-in">
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold tracking-tight">Профиль</h1>
-          <p className="mt-2 text-muted-foreground">Управляйте своими настройками и предпочтениями</p>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <AnimatedBackground />
+
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-blob" />
+        <div className="absolute top-40 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
+      </div>
+
+      <Navigation />
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl animate-fade-in relative z-10">
+        <div className="mb-8 flex items-center justify-between animate-fade-in-down">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-full bg-gradient-purple-pink animate-float shadow-lg">
+              <User className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Профиль</h1>
+              <p className="text-muted-foreground">Управляйте своими данными и предпочтениями</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+            className="bg-gradient-purple-pink hover:opacity-90 text-white"
+          >
+            {isEditing ? (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Сохранить
+              </>
+            ) : (
+              <>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Редактировать
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-accent/50 hover:shadow-lg animate-fade-in">
-            <div className="mb-6 flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/20 transition-all duration-300 hover:scale-110">
-                <User className="h-10 w-10" aria-hidden="true" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold">Личная информация</h2>
-                <p className="text-sm text-muted-foreground">Обновите свои данные</p>
-              </div>
-            </div>
-
+          <Card className="p-6 bg-card/50 backdrop-blur-sm border-border animate-scale-in">
+            <h2 className="text-xl font-semibold mb-4">Основная информация</h2>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Имя</Label>
+              <div>
+                <Label htmlFor="name" className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Имя
+                </Label>
                 <Input
                   id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Введите имя"
-                  className="transition-all duration-200 focus:border-accent focus:shadow-md"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  disabled={!isEditing}
+                  className="bg-background"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+              <div>
+                <Label htmlFor="email" className="flex items-center gap-2 mb-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Введите email"
-                  className="transition-all duration-200 focus:border-accent focus:shadow-md"
+                  value={profile.email}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  disabled={!isEditing}
+                  className="bg-background"
                 />
               </div>
-
-              <Button
-                onClick={handleSave}
-                className="w-full gap-2 transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 hover:scale-105"
-              >
-                <Save className="h-4 w-4" />
-                Сохранить изменения
-              </Button>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-accent/50 hover:shadow-lg animate-fade-in"
-            style={{ animationDelay: "0.1s" }}
-          >
-            <div className="mb-4 flex items-center gap-3">
-              {theme === "dark" ? (
-                <Moon
-                  className="h-6 w-6 text-accent transition-transform duration-300 hover:rotate-12"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Sun
-                  className="h-6 w-6 text-accent transition-transform duration-300 hover:rotate-90"
-                  aria-hidden="true"
-                />
-              )}
               <div>
-                <h2 className="text-xl font-semibold">Тема оформления</h2>
-                <p className="text-sm text-muted-foreground">Выберите светлую или темную тему</p>
+                <Label className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Дата регистрации
+                </Label>
+                <Input value={new Date(profile.joinDate).toLocaleDateString("ru-RU")} disabled className="bg-muted" />
               </div>
             </div>
+          </Card>
 
-            <div className="flex gap-2">
-              <Button
-                variant={theme === "light" ? "default" : "outline"}
-                onClick={() => setTheme("light")}
-                className="flex-1 gap-2 transition-all duration-300 hover:scale-105"
-              >
-                <Sun className="h-4 w-4" />
-                Светлая
-              </Button>
-              <Button
-                variant={theme === "dark" ? "default" : "outline"}
-                onClick={() => setTheme("dark")}
-                className="flex-1 gap-2 transition-all duration-300 hover:scale-105"
-              >
-                <Moon className="h-4 w-4" />
-                Темная
-              </Button>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-accent/50 hover:shadow-lg animate-fade-in"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell
-                  className="h-6 w-6 text-accent transition-transform duration-300 hover:rotate-12"
-                  aria-hidden="true"
+          <Card className="p-6 bg-card/50 backdrop-blur-sm border-border animate-scale-in animate-delay-100">
+            <h2 className="text-xl font-semibold mb-4">Стилистические предпочтения</h2>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="style" className="mb-2 block">
+                  Предпочитаемый стиль
+                </Label>
+                <Input
+                  id="style"
+                  value={profile.preferences.style}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      preferences: { ...profile.preferences, style: e.target.value },
+                    })
+                  }
+                  disabled={!isEditing}
+                  className="bg-background"
                 />
-                <div>
-                  <h2 className="text-xl font-semibold">Уведомления</h2>
-                  <p className="text-sm text-muted-foreground">Получайте новости и рекомендации</p>
+              </div>
+              <div>
+                <Label className="mb-2 block">Любимые цвета</Label>
+                <div className="flex flex-wrap gap-2">
+                  {profile.preferences.colors.map((color, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm border border-primary/20"
+                    >
+                      {color}
+                    </span>
+                  ))}
                 </div>
               </div>
-
-              <Button
-                variant={notifications ? "default" : "outline"}
-                onClick={() => setNotifications(!notifications)}
-                className="transition-all duration-300 hover:scale-105"
-              >
-                {notifications ? "Включены" : "Выключены"}
-              </Button>
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl border border-destructive/50 bg-card p-6 transition-all duration-300 hover:border-destructive hover:shadow-lg hover:shadow-destructive/10 animate-fade-in"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <LogOut
-                  className="h-6 w-6 text-destructive transition-transform duration-300 hover:-translate-x-1"
-                  aria-hidden="true"
-                />
-                <div>
-                  <h2 className="text-xl font-semibold">Выход из аккаунта</h2>
-                  <p className="text-sm text-muted-foreground">Завершить текущий сеанс</p>
+              <div>
+                <Label className="mb-2 block">Типичные случаи</Label>
+                <div className="flex flex-wrap gap-2">
+                  {profile.preferences.occasions.map((occasion, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-sm border border-purple-500/20"
+                    >
+                      {occasion}
+                    </span>
+                  ))}
                 </div>
               </div>
-
-              <Button variant="destructive" className="transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                Выйти
-              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
