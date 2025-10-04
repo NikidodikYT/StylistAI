@@ -5,6 +5,10 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Navigation } from "@/components/navigation"
 import { PWAPrompt } from "@/components/pwa-prompt"
+import { AnimatedBackground } from "@/components/animated-background"
+import { BlobDecoration } from "@/components/blob-decoration"
+import { WelcomeModal } from "@/components/welcome-modal"
+import { Footer } from "@/components/footer"
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -50,8 +54,12 @@ export default function RootLayout({
     <html lang="ru" className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AnimatedBackground />
+          <BlobDecoration />
           <Navigation />
-          <main className="min-h-screen">{children}</main>
+          <main className="relative min-h-screen">{children}</main>
+          <Footer />
+          <WelcomeModal />
           <PWAPrompt />
           <script
             dangerouslySetInnerHTML={{
