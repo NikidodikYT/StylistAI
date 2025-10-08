@@ -1,0 +1,29 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "StylistAI Backend"
+authors = [
+    {name = "Никидодикит",email = "nikfire2285@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "sqlalchemy>=2.0.25",
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.13.1",
+    "pydantic[email]>=2.7.1",
+    "python-dotenv>=1.0.1",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# ЭТА СЕКЦИЯ - КЛЮЧ К РЕШЕНИЮ
+[tool.poetry]
+packages = [{include = "stylist_ai", from = "src"}]
