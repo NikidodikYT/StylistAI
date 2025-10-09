@@ -1,14 +1,29 @@
-# backend/src/stylist_ai/db/session.py
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from stylist_ai.core.config import settings
+from sqlalchemy.orm import sessionmaker, Session
 
-# "Движок" (Engine) - это сердце SQLAlchemy. Он управляет пулом подключений
-# к базе данных. Мы создаем его один раз на все приложение.
-# Аналогия: это как включить электростанцию для города.
-engine = create_engine(str(settings.DATABASE_URL), pool_pre_ping=True)
+# Строка подключения к БД
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@db:5432/postgres"
+)
 
-# "Фабрика сессий" (SessionLocal). Каждый экземпляр SessionLocal будет
-# отдельным "разговором" с базой данных.
-# Аналогия: это как телефонный аппарат, который может сделать звонок на электростанцию.
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Создание движка
+engine = create_engine(DATABASE_URL)
+
+# Фабрика сессий
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+def get_db() -> Session:
+    """
+    Зависимость FastAPI для получения сессии БД.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

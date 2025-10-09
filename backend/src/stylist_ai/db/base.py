@@ -1,7 +1,4 @@
-# backend/src/stylist_ai/db/base.py
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.declarative import declarative_base
 
-# Это базовый класс, от которого будут наследоваться все наши
-# классы-модели. Он связывает наши классы с SQLAlchemy.
-class Base(DeclarativeBase):
-    pass
+# База моделей
+Base = declarative_base()

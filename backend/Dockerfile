@@ -1,20 +1,33 @@
-# 1. Используем официальный образ Python как основу
+# backend/Dockerfile
+
 FROM python:3.11-slim
 
-# 2. Устанавливаем Poetry
-RUN pip install poetry
+# 1. Переменные окружения
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_CACHE_DIR='/var/cache/pypoetry' \
+    PYTHONPATH="/app/src"
 
-# 3. Устанавливаем рабочую директорию внутри контейнера
+# 2. Установка зависимостей и Poetry
+RUN apt-get update \
+ && apt-get install -y curl gcc libpq-dev \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip install poetry
+
+# 3. Рабочая директория
 WORKDIR /app
 
-# 4. Копируем файлы проекта
+# 4. Копируем файлы зависимостей
 COPY pyproject.toml poetry.lock ./
-COPY src/ /app/src/
-COPY migrations/ /app/migrations/
-COPY alembic.ini /app/alembic.ini
 
-# 5. Устанавливаем зависимости, не создавая виртуальное окружение
-RUN poetry config virtualenvs.create false && poetry install --no-root --no-dev
+# 5. Устанавливаем зависимости без создания виртуального окружения
+RUN poetry install --only main --no-root
 
-# 6. Указываем команду, которая будет запускаться при старте контейнера
-CMD ["uvicorn", "stylist_ai.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 6. Копируем исходники приложения
+COPY src ./src
+
+# 7. Запуск Uvicorn с логированием и рестартом
+CMD ["uvicorn", "stylist_ai.main:app", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--reload", "--log-level", "debug"]

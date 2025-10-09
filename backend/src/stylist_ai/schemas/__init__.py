@@ -1,1 +1,6 @@
-from .user import User, UserCreate
+from .user import UserCreate, UserOut
+
+__all__ = [
+    "UserCreate",
+    "UserOut",
+]

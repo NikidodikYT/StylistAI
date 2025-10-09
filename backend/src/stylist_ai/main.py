@@ -1,11 +1,10 @@
-# backend/src/stylist_ai/main.py
 from fastapi import FastAPI
-from stylist_ai.api.router import api_router # <-- ДОБАВИТЬ ИМПОРТ
+from stylist_ai.db.base import Base
+from stylist_ai.db.session import engine
+from stylist_ai.api.router import router
 
-app = FastAPI(title="StylistAI API")
+# Создание таблиц при старте
+Base.metadata.create_all(bind=engine)
 
-app.include_router(api_router, prefix="/api/v1") # <-- ДОБАВИТЬ ЭТУ СТРОКУ
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to StylistAI Backend"}
+app = FastAPI(debug=True)
+app.include_router(router)
