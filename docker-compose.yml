@@ -1,41 +1,30 @@
-# Файл: C:/StylistAI/docker-compose.yml
-
 services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stylist_ai_api
+    command: >
+      sh -c "poetry run alembic upgrade head &&
+             poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+
   db:
     image: postgres:15-alpine
     container_name: stylist_ai_db
-    environment:
-      - POSTGRES_USER=stylistai
-      - POSTGRES_PASSWORD=supersecretpassword
-      - POSTGRES_DB=stylistai_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
     ports:
-      - "5432:5432" # Пробрасываем порт БД наружу для отладки
-
-  api:
-    build:
-      context: ./backend  # Говорим Docker: "Ищи Dockerfile в папке 'backend'"
-    container_name: stylist_ai_api
-    # --- ВОТ ГЛАВНАЯ МАГИЯ ---
-    # Эта команда будет запускаться КАЖДЫЙ РАЗ при старте контейнера.
-    # 1. Он ждет, пока база данных будет готова (entrypoint-скрипт нужен для этого).
-    # 2. Он АВТОМАТИЧЕСКИ применяет миграции Alembic.
-    # 3. Он запускает сервер Uvicorn.
-    # Тебе больше НИКОГДА не нужно будет делать миграции вручную!
-    command: /bin/sh -c "poetry run alembic upgrade head && poetry run uvicorn stylist_ai.main:app --host 0.0.0.0 --port 8000 --reload"
-    depends_on:
-      - db             # Говорим Docker: "Запускай 'api' только после того, как 'db' будет готов"
-    ports:
-      - "8000:8000"    # Пробрасываем порт нашего API наружу, на твой компьютер
-    environment:
-      # Приложение внутри контейнера будет подключаться по ИМЕНИ СЕРВИСА 'db', а не по 'localhost'
-      - DATABASE_URL=postgresql://stylistai:supersecretpassword@db:5432/stylistai_db
+      - "5432:5432"
+    env_file:
+      - .env
     volumes:
-      # Синхронизируем код, чтобы --reload работал. Изменения в коде на твоей машине
-      # будут мгновенно появляться внутри контейнера.
-      - ./backend:/app
+      - stylist_ai_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
-    name: stylist_ai_postgres_data
+  stylist_ai_postgres_data:
