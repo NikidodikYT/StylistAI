@@ -1,0 +1,69 @@
+Структура папок тома SSD 1000 Gb
+Серийный номер тома: C078-9658
+C:.
+|   .env
+|   docker-compose.yml
+|   Dockerfile
+|   pyproject.toml
+|   structure.txt
+|   
+\---app
+    |   init.py
+    |   main.py
+    |   
+    +---api
+    |   |   init.py
+    |   |   
+    |   \---v1
+    |       |   auth.py
+    |       |   init.py
+    |       |   
+    |       \---__pycache__
+    |               auth.cpython-311.pyc
+    |               
+    +---core
+    |   |   config.py
+    |   |   init.py
+    |   |   security.py
+    |   |   
+    |   \---__pycache__
+    |           config.cpython-311.pyc
+    |           security.cpython-311.pyc
+    |           
+    +---db
+    |   |   init.py
+    |   |   session.py
+    |   |   
+    |   \---__pycache__
+    |           session.cpython-311.pyc
+    |           
+    +---models
+    |   |   init.py
+    |   |   user.py
+    |   |   
+    |   \---__pycache__
+    |           user.cpython-311.pyc
+    |           
+    +---schemas
+    |   |   token.py
+    |   |   user.py
+    |   |   __init__.py
+    |   |   
+    |   \---__pycache__
+    |           token.cpython-311.pyc
+    |           user.cpython-311.pyc
+    |           __init__.cpython-311.pyc
+    |           
+    +---services
+    |   |   auth_service.py
+    |   |   user_service.py
+    |   |   __init__.py
+    |   |   
+    |   \---__pycache__
+    |           auth_service.cpython-311.pyc
+    |           user_service.cpython-311.pyc
+    |           __init__.cpython-311.pyc
+    |           
+    \---__pycache__
+            main.cpython-311.pyc
+            
