@@ -1,121 +1,140 @@
 # ============================================
 # PYTHON / BACKEND
 # ============================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyc
-*.pyo
-*.pyd
-.Python
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.py[cod]
+backend/**/*.py[cod]
+backend/*$py.class
+backend/**/*$py.class
+backend/*.pyc
+backend/**/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
 
 # Virtual Environment
-.env
-.venv/
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+backend/.env
+backend/.venv/
+backend/venv/
+backend/env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
 
 # Python packages
-*.egg
-*.egg-info/
-dist/
-build/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-*.manifest
-*.spec
+backend/*.egg
+backend/*.egg-info/
+backend/dist/
+backend/build/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/pip-wheel-metadata/
+backend/*.manifest
+backend/*.spec
 
 # PyInstaller
-*.exe
-*.so
-*.dylib
+backend/*.exe
+backend/*.so
+backend/*.dylib
 
 # IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-.settings/
+backend/.vscode/
+backend/.idea/
+backend/*.swp
+backend/*.swo
+backend/*~
+backend/.project
+backend/.pydevproject
+backend/.settings/
 
 # ============================================
 # FASTAPI / BACKEND SPECIFIC
 # ============================================
 # Alembic
-alembic/versions/*.pyc
-alembic/__pycache__/
+backend/alembic/versions/*.pyc
+backend/alembic/__pycache__/
 
-# Uploads (загруженные файлы)
-uploads/*
-!uploads/.gitkeep
+# Uploads (загруженные файлы) - ВАЖНО!
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/uploads/clothing/*
 
 # Logs
-*.log
-logs/
-log/
+backend/*.log
+backend/logs/
+backend/log/
 
 # ============================================
 # DATABASE
 # ============================================
-*.db
-*.sqlite
-*.sqlite3
-postgres_data/
-db_data/
-pgdata/
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/postgres_data/
+backend/db_data/
+backend/pgdata/
 
 # ============================================
 # DOCKER
 # ============================================
-docker-compose.override.yml
-.docker/
-docker-compose.*.yml
+backend/docker-compose.override.yml
+backend/.docker/
 
 # ============================================
-# ENVIRONMENT VARIABLES
+# TEMPORARY FILES
 # ============================================
-.env
-.env.local
-.env.*.local
-.env.development
-.env.test
-.env.production
-.env.staging
+backend/*.tmp
+backend/*.temp
+backend/*.bak
+backend/*.backup
+backend/tmp/
+backend/temp/
 
 # ============================================
-# NODE / FRONTEND (если будет React)
+# PROJECT SPECIFIC (StylistAI Backend)
 # ============================================
-node_modules/
-.next/
-out/
-build/
-dist/
-.cache/
-.parcel-cache/
+backend/ai_cache/
+backend/*.cache
+backend/temp_images/
+backend/processed_images/
+backend/uploads_backup/
+backend/test_data/
+backend/sample_images/
+backend/files_list.txt
+backend/models_check.txt
+backend/structure.txt
+
+# ============================================
+# FRONTEND (если будет React)
+# ============================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.cache/
+frontend/.parcel-cache/
 
 # Frontend env
-.env.development.local
-.env.test.local
-.env.production.local
+frontend/.env.local
+frontend/.env.*.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Frontend logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
 
 # ============================================
 # OS-GENERATED FILES
@@ -139,55 +158,32 @@ $RECYCLE.BIN/
 # ============================================
 # TESTING & COVERAGE
 # ============================================
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-.hypothesis/
-.cache
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/coverage.xml
+backend/*.cover
+backend/.hypothesis/
+backend/.cache
 
 # ============================================
 # JUPYTER NOTEBOOK
 # ============================================
-.ipynb_checkpoints
+backend/.ipynb_checkpoints
 
 # ============================================
 # SECURITY (важно!)
 # ============================================
-*.pem
-*.key
-*.cert
-*.p12
-secrets/
-secret.json
+backend/*.pem
+backend/*.key
+backend/*.cert
+backend/*.p12
+backend/secrets/
+backend/secret.json
 
 # ============================================
-# TEMPORARY FILES
+# ROOT LEVEL
 # ============================================
-*.tmp
-*.temp
-*.bak
-*.backup
-tmp/
-temp/
-
-# ============================================
-# PROJECT SPECIFIC (StylistAI)
-# ============================================
-# Gemini AI cache (если будут кешироваться ответы)
-ai_cache/
-*.cache
-
-# Temporary images
-temp_images/
-processed_images/
-
-# User uploads backup
-uploads_backup/
-
-# Test data
-test_data/
-sample_images/
+check_models.py
