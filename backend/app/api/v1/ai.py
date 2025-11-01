@@ -10,6 +10,7 @@ from app.models.user import User
 from app.schemas.clothing import AIAnalysisResponse, ClothingItemCreate
 from app.services.clothing_service import clothing_service
 from app.services.gemini_service import gemini_service
+from app.services.marketplace_service import marketplace_service
 from app.api.v1.auth import get_current_user
 
 router = APIRouter()
@@ -115,7 +116,7 @@ async def get_outfit_recommendations(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить AI рекомендации нарядов на основе гардероба"""
+    """Получить AI рекомендации нарядов"""
     wardrobe = await clothing_service.get_user_wardrobe(
         db=db,
         user_id=current_user.id,
@@ -125,7 +126,7 @@ async def get_outfit_recommendations(
     if not wardrobe:
         raise HTTPException(
             status_code=400,
-            detail="Wardrobe is empty. Upload some clothing items first!"
+            detail="Wardrobe is empty. Upload items first!"
         )
     
     wardrobe_dicts = [
@@ -163,7 +164,7 @@ async def outfit_for_occasion(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Генерация наряда для конкретного случая"""
+    """Генерация наряда для случая"""
     wardrobe = await clothing_service.get_user_wardrobe(
         db=db,
         user_id=current_user.id,
@@ -205,7 +206,7 @@ async def get_analysis_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """История всех AI анализов пользователя"""
+    """История AI анализов"""
     analyses = await clothing_service.get_user_analyses(
         db=db,
         user_id=current_user.id,
@@ -221,7 +222,7 @@ async def get_style_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Анализ общего стиля пользователя на основе гардероба"""
+    """Анализ стиля пользователя"""
     wardrobe = await clothing_service.get_user_wardrobe(
         db=db,
         user_id=current_user.id,
@@ -260,10 +261,7 @@ async def analyze_wardrobe_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    НОВОЕ: Анализ одной вещи из гардероба
-    AI даёт советы как носить эту вещь
-    """
+    """Анализ одной вещи из гардероба"""
     item = await clothing_service.get_clothing_item(db, item_id, current_user.id)
     
     if not item:
@@ -317,10 +315,7 @@ async def analyze_outfit_combination(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    НОВОЕ: Анализ комбинации вещей (наряда)
-    Пользователь выбирает несколько вещей, AI оценивает комбинацию
-    """
+    """Анализ комбинации вещей"""
     
     if not item_ids or len(item_ids) < 2:
         raise HTTPException(
@@ -374,4 +369,47 @@ async def analyze_outfit_combination(
         "occasion": occasion,
         "analysis": result.get("analysis", {}),
         "model": result.get("model")
+    }
+
+
+@router.post("/find-similar")
+async def find_similar_products(
+    item_id: int = Body(..., embed=True),
+    max_results_per_marketplace: int = Body(default=5, embed=True),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Поиск похожих товаров на OZON и Wildberries"""
+    
+    item = await clothing_service.get_clothing_item(db, item_id, current_user.id)
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if item.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    gemini_result = await gemini_service.generate_shopping_suggestions(
+        category=item.category,
+        color=item.color,
+        description=item.description or ""
+    )
+    
+    marketplace_result = await marketplace_service.search_all_marketplaces(
+        category=item.category,
+        color=item.color,
+        limit_per_marketplace=max_results_per_marketplace
+    )
+    
+    return {
+        "item": {
+            "id": item.id,
+            "category": item.category,
+            "color": item.color,
+            "image_url": item.image_url
+        },
+        "ai_suggestions": gemini_result.get("suggestions", {}),
+        "products": marketplace_result.get("products", []),
+        "total_found": marketplace_result.get("total", 0),
+        "by_marketplace": marketplace_result.get("by_marketplace", {})
     }

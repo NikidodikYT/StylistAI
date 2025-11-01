@@ -93,7 +93,6 @@ Return ONLY valid JSON without any markdown formatting:
                 parsed = json.loads(clean)
             except json.JSONDecodeError as e:
                 print(f"JSON parse error: {e}")
-                print(f"Raw response: {clean}")
                 parsed = {"raw_response": clean, "parse_error": str(e)}
 
             return {"success": True, "analysis": parsed, "model": self.model_name}
@@ -101,11 +100,9 @@ Return ONLY valid JSON without any markdown formatting:
         except Exception as e:
             error_msg = str(e)
             if "quota" in error_msg.lower():
-                return {"success": False, "error": "API quota exceeded. Try again later."}
+                return {"success": False, "error": "API quota exceeded"}
             elif "auth" in error_msg.lower():
-                return {"success": False, "error": "Authentication failed. Check API key."}
-            elif "file" in error_msg.lower():
-                return {"success": False, "error": f"File error: {error_msg}"}
+                return {"success": False, "error": "Authentication failed"}
             else:
                 return {"success": False, "error": f"Analysis failed: {error_msg}"}
 
@@ -127,7 +124,7 @@ Return ONLY valid JSON without any markdown formatting:
 
             wardrobe_desc = "\n".join(items_text) or "No items"
             occ = occasion or "everyday casual"
-            weath = weather or "normal temperature"
+            weath = weather or "normal"
 
             prompt = f"""You are a professional fashion stylist. Create outfit recommendations using ONLY the provided wardrobe items.
 
@@ -141,8 +138,8 @@ REQUIREMENTS:
 Create 3-5 complete outfit combinations. For each outfit provide:
 - outfit_name: creative name
 - description: why this combination works well
-- items: list of items from wardrobe to use (with category and color)
-- style_notes: tips for styling, accessories, shoes
+- items: list of items from wardrobe to use
+- style_notes: tips for styling
 
 Return ONLY valid JSON without markdown:
 {{
@@ -151,8 +148,6 @@ Return ONLY valid JSON without markdown:
       "outfit_name": "Casual Comfort",
       "description": "Perfect for relaxed weekend...",
       "items": [{{"category": "shirt", "color": "blue"}}, {{"category": "pants", "color": "jeans"}}],
-      "occasion": "{occ}",
-      "weather": "{weath}",
       "style_notes": "Pair with white sneakers..."
     }}
   ]
@@ -184,17 +179,17 @@ Return ONLY valid JSON without markdown:
 
             wardrobe_desc = "\n".join(items_text) or "- empty"
 
-            prompt = f"""You are a fashion consultant. Analyze this wardrobe and create a comprehensive style profile.
+            prompt = f"""You are a fashion consultant. Analyze this wardrobe and create a style profile.
 
 WARDROBE:
 {wardrobe_desc}
 
-Provide analysis with:
+Provide analysis:
 - dominant_style: main style direction
 - color_palette: most used colors (list)
-- strengths: what works well in this wardrobe (list)
+- strengths: what works well (list)
 - recommendations: suggestions for improvement
-- style_summary: overall style assessment (2-3 sentences)
+- style_summary: overall assessment
 
 Return ONLY valid JSON without markdown:
 {{
@@ -223,7 +218,6 @@ Return ONLY valid JSON without markdown:
         item: Dict[str, Any],
         other_wardrobe: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """НОВОЕ: Анализ одной вещи из гардероба с рекомендациями"""
         if not self.available:
             return {"success": False, "error": "Gemini AI not available"}
         
@@ -233,27 +227,26 @@ Return ONLY valid JSON without markdown:
                 for w in other_wardrobe[:20]
             ]) or "- empty"
             
-            prompt = f"""You are a professional fashion stylist. Analyze this clothing item and provide styling advice.
+            prompt = f"""You are a fashion stylist. Analyze this item and provide styling advice.
 
-ITEM TO ANALYZE:
+ITEM:
 - Category: {item.get('category', 'unknown')}
 - Color: {item.get('color', 'unknown')}
 - Description: {item.get('description', 'N/A')}
 
-USER'S OTHER WARDROBE ITEMS:
+USER'S OTHER WARDROBE:
 {wardrobe_desc}
 
-Provide detailed analysis in JSON format:
+Provide analysis in JSON:
 {{
-  "styling_tips": "How to style this item (2-3 sentences)...",
+  "styling_tips": "How to style...",
   "best_combinations": [
-    {{"with": "pants", "color": "black", "reason": "Creates clean contrast"}},
-    {{"with": "jeans", "color": "blue", "reason": "Casual versatile look"}}
+    {{"with": "pants", "color": "black", "reason": "Creates contrast"}}
   ],
-  "occasions": ["work", "casual", "party"],
-  "do_wear": ["Tuck it in for formal", "Roll sleeves for casual"],
-  "dont_wear": ["Avoid with loud patterns", "Skip for very formal events"],
-  "accessories": ["Leather belt", "Simple watch", "Minimal jewelry"],
+  "occasions": ["work", "casual"],
+  "do_wear": ["Tuck it in", "Roll sleeves"],
+  "dont_wear": ["Avoid patterns", "Skip formal"],
+  "accessories": ["Belt", "Watch"],
   "overall_rating": 8,
   "style_direction": "smart casual"
 }}
@@ -268,11 +261,7 @@ Return ONLY valid JSON without markdown."""
             except json.JSONDecodeError:
                 parsed = {"raw_response": clean}
             
-            return {
-                "success": True,
-                "analysis": parsed,
-                "model": self.model_name
-            }
+            return {"success": True, "analysis": parsed, "model": self.model_name}
         
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -282,7 +271,6 @@ Return ONLY valid JSON without markdown."""
         items: List[Dict[str, Any]],
         occasion: Optional[str] = None
     ) -> Dict[str, Any]:
-        """НОВОЕ: Анализ комбинации нескольких вещей (наряда)"""
         if not self.available:
             return {"success": False, "error": "Gemini AI not available"}
         
@@ -292,30 +280,29 @@ Return ONLY valid JSON without markdown."""
                 for i, item in enumerate(items)
             ])
             
-            occasion_text = f"\nDesired occasion: {occasion}" if occasion else ""
+            occasion_text = f"\nOccasion: {occasion}" if occasion else ""
             
-            prompt = f"""You are a professional fashion stylist. Analyze this outfit combination.
+            prompt = f"""You are a fashion stylist. Analyze this outfit combination.
 
-OUTFIT ITEMS:
+OUTFIT:
 {items_desc}{occasion_text}
 
-Provide comprehensive analysis in JSON format:
+Provide analysis in JSON:
 {{
   "compatibility_score": 8.5,
   "style_type": "casual sporty",
   "color_harmony": "excellent",
-  "overall_impression": "Detailed assessment (2-3 sentences)...",
-  "pros": ["What works well point 1", "Good aspect 2", "Strong point 3"],
-  "cons": ["What could be improved 1", "Potential issue 2"],
+  "overall_impression": "Assessment...",
+  "pros": ["What works", "Good point"],
+  "cons": ["Could improve", "Issue"],
   "suggestions": [
-    {{"change": "Replace X with Y", "reason": "Better fit for style"}},
-    {{"change": "Add accessory Z", "reason": "Completes the look"}}
+    {{"change": "Replace X", "reason": "Better fit"}}
   ],
-  "best_occasions": ["casual outing", "weekend brunch", "date"],
-  "avoid_occasions": ["formal event", "business meeting"],
-  "missing_pieces": ["Light jacket", "Statement accessory"],
-  "accessories_recommendations": ["Watch", "Belt", "Sunglasses"],
-  "footwear_advice": "Best shoes for this outfit...",
+  "best_occasions": ["casual", "weekend"],
+  "avoid_occasions": ["formal", "business"],
+  "missing_pieces": ["Jacket", "Accessory"],
+  "accessories_recommendations": ["Watch", "Belt"],
+  "footwear_advice": "Best shoes...",
   "final_verdict": "Great combination"
 }}
 
@@ -329,11 +316,51 @@ Return ONLY valid JSON without markdown."""
             except json.JSONDecodeError:
                 parsed = {"raw_response": clean}
             
-            return {
-                "success": True,
-                "analysis": parsed,
-                "model": self.model_name
-            }
+            return {"success": True, "analysis": parsed, "model": self.model_name}
+        
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def generate_shopping_suggestions(
+        self,
+        category: str,
+        color: str,
+        description: str
+    ) -> Dict[str, Any]:
+        if not self.available:
+            return {"success": False, "error": "Gemini AI not available"}
+        
+        try:
+            prompt = f"""You are a shopping assistant. Help find where to buy this item in Russia.
+
+ITEM:
+- Category: {category}
+- Color: {color}
+- Description: {description}
+
+Provide shopping recommendations in JSON:
+{{
+  "recommended_stores": [
+    {{"store": "OZON", "reason": "Широкий выбор", "price_range": "₽1000-3000"}},
+    {{"store": "Wildberries", "reason": "Хорошие скидки", "price_range": "₽800-2500"}}
+  ],
+  "search_keywords": ["keyword 1", "keyword 2"],
+  "budget_options": "Ищите на WB в распродажах",
+  "premium_options": "Для качества - OZON Premium",
+  "style_tips": "С чем сочетать при покупке"
+}}
+
+Return ONLY valid JSON without markdown."""
+
+            response = self.model.generate_content(prompt)
+            clean = self.clean_text(response.text)
+            
+            try:
+                parsed = json.loads(clean)
+            except json.JSONDecodeError:
+                parsed = {"raw_response": clean}
+            
+            return {"success": True, "suggestions": parsed}
         
         except Exception as e:
             return {"success": False, "error": str(e)}
