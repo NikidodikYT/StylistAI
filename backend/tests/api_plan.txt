@@ -1,0 +1,194 @@
+# AUTH
+
+POST /api/v1/auth/register
+Body (application/json):
+{
+  "email": string,
+  "password": string,
+  "username": string,
+  "full_name": string,
+  "gender": string,
+  "age": int,
+  "style_preferences": string,
+  "favorite_brands": string
+}
+Response 201:
+- данные пользователя (id, email, username, ...)
+
+POST /api/v1/auth/login
+Body (application/x-www-form-urlencoded):
+- grant_type: "password"
+- username: string
+- password: string
+- scope: ""
+- client_id: ""
+- client_secret: ""
+Response 200:
+{
+  "access_token": string,
+  "token_type": "bearer"
+}
+
+
+# WARDROBE
+
+POST /api/v1/wardrobe/upload
+Query params:
+- category: string (optional)
+- color: string (optional)
+- brand: string (optional)
+- description: string (optional)
+Body (multipart/form-data):
+- file: binary image (required)
+Auth: Bearer
+Response 201:
+{
+  "id": int,
+  "category": string,
+  "color": string,
+  "brand": string | null,
+  "description": string,
+  "image_url": string,
+  "created_at": datetime,
+  ...
+}
+
+GET /api/v1/wardrobe/
+Query params:
+- skip: int (default 0)
+- limit: int (default 100)
+- category: string (optional)
+- color: string (optional)
+Auth: Bearer
+Response 200:
+{
+  "items": [
+    {
+      "id": int,
+      "category": string,
+      "color": string,
+      "brand": string | null,
+      "description": string,
+      "image_url": string,
+      "created_at": datetime,
+      ...
+    },
+    ...
+  ],
+  "total": int
+}
+
+GET /api/v1/wardrobe/{item_id}
+Path:
+- item_id: int
+Auth: Bearer
+Response 200:
+{
+  "id": int,
+  "category": string,
+  "color": string,
+  "brand": string | null,
+  "description": string,
+  "image_url": string,
+  "created_at": datetime,
+  ...
+}
+
+DELETE /api/v1/wardrobe/{item_id}
+Path:
+- item_id: int
+Auth: Bearer
+Response 204: (пусто)
+
+
+# AI
+
+POST /api/v1/ai/analyze-image
+Query params:
+- save_to_wardrobe_flag: bool (default false)
+Body (multipart/form-data):
+- file: binary image (required)
+Auth: Bearer
+Response 200:
+{
+  "success": true,
+  "analysis_id": int,
+  "item_id": int | null,
+  "saved_to_wardrobe": bool,
+  "clothing": {
+    "category": string,
+    "subcategory": string | null,
+    "colors": [string],
+    "pattern": string | null,
+    "material": string | null,
+    "fit": string | null,
+    "length": string | null,
+    "collar_type": string | null,
+    "sleeve_length": string | null,
+    "details": string | null,
+    "brand": string | null,
+    "target_audience": string | null,
+    "style": string | null,
+    "season": string | null,
+    "description": string | null,
+    "explanation": string | null,
+    "search_query": string | null,
+    "search_keywords": [string] | null
+  },
+  "image_path": string,
+  "created_at": datetime
+}
+
+GET /api/v1/ai/analyses
+Query params:
+- limit: int (default 50)
+- offset: int (default 0)
+Auth: Bearer
+Response 200:
+{
+  "total": int,
+  "analyses": [
+    {
+      "id": int,
+      "clothing": (тот же объект ClothingAnalysis, что и выше),
+      "saved_to_wardrobe": bool,
+      "created_at": datetime
+    },
+    ...
+  ]
+}
+
+POST /api/v1/ai/find-similar
+Body (application/json):
+{
+  "item_id": int,
+  "marketplaces": ["pricescout", "asos", "hm"],   // можно часть списка
+  "max_results_per_marketplace": int (default 10)
+}
+Auth: Bearer
+Response 200:
+{
+  "success": true,
+  "item": {
+    "id": int,
+    "category": string | null,
+    "color": string | null,
+    "brand": string | null,
+    "description": string | null,
+    "image_url": string
+  },
+  "similar_products": [
+    {
+      "name": string,
+      "price": number,
+      "currency": string,
+      "url": string,
+      "image_url": string,
+      "brand": string,
+      "marketplace": "asos" | "hm" | "pricescout"
+    },
+    ...
+  ],
+  "total_found": int,
+  "search_query": string
+}

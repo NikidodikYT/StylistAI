@@ -1,0 +1,60 @@
+C:.
+|   .env
+|   backend_tree.txt
+|   docker-compose.yml
+|   Dockerfile
+|   pyproject.toml
+|   requirements.txt
+|   
++---app
+|   |   init.py
+|   |   main.py
+|   |   
+|   +---api
+|   |   |   init.py
+|   |   |   
+|   |   \---v1
+|   |           ai.py
+|   |           auth.py
+|   |           init.py
+|   |           wardrobe.py
+|   |           
+|   +---core
+|   |       config.py
+|   |       init.py
+|   |       security.py
+|   |       
+|   +---db
+|   |       init.py
+|   |       session.py
+|   |       
+|   +---models
+|   |       ai_analysis.py
+|   |       clothing.py
+|   |       init.py
+|   |       user.py
+|   |       __init__.py
+|   |       
+|   +---schemas
+|   |       ai.py
+|   |       clothing.py
+|   |       token.py
+|   |       user.py
+|   |       __init__.py
+|   |       
+|   \---services
+|           asos_provider.py
+|           auth_service.py
+|           clothing_service.py
+|           gemini_service.py
+|           hm_provider.py
+|           marketplace_service.py
+|           pricescout_provider.py
+|           user_service.py
+|           __init__.py
+|           
+\---uploads
+    |   .gitkeep
+    |   
+    +---clothing
+    \---temp

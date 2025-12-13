@@ -24,6 +24,9 @@ RUN poetry config virtualenvs.create false \
 # Копируем код приложения
 COPY . .
 
+# Создаём директории для загрузок (ДОБАВИТЬ)
+RUN mkdir -p uploads/temp uploads/clothing
+
 # Открываем порт
 EXPOSE 8000
 

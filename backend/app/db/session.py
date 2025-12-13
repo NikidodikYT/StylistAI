@@ -1,30 +1,39 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-# Создаём движок БД
+# Создаём базовый класс для моделей
+Base = declarative_base()
+
+# Создаём асинхронный движок
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,
+    echo=False,
     future=True
 )
 
 # Создаём фабрику сессий
-AsyncSessionLocal = async_sessionmaker(
+async_session = sessionmaker(
     engine,
     class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False
+    expire_on_commit=False
 )
 
-# Базовый класс для моделей
-Base = declarative_base()
 
 async def get_db():
     """Dependency для получения сессии БД"""
-    async with AsyncSessionLocal() as session:
+    async with async_session() as session:
         try:
             yield session
         finally:
             await session.close()
+
+
+async def create_db_and_tables():
+    """Создаёт все таблицы в базе данных"""
+    from app.models import user, clothing, ai_analysis
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    print("✓ Database tables created successfully")
