@@ -34,7 +34,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { CATEGORY_LABELS, type ClothingCategory, type ClothingItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { addWardrobeItem } from "@/lib/actions"; // Функция для добавления новой вещи в гардероб
+import { AddItemDialog } from "@/components/add-item-dialog";
+import { addWardrobeItem } from "@/lib/actions"; // Import addWardrobeItem
+import { ImageUploadInput } from "@/components/image-upload-input"; // Import ImageUploadInput
 
 // Категории одежды для фильтрации
 const categories: ClothingCategory[] = ["all", "tops", "bottoms", "shoes", "outerwear", "accessories"];
@@ -58,6 +60,8 @@ export function WardrobeScreen() {
  const [styleFilter, setStyleFilter] = useState("Все");
  const [seasonFilter, setSeasonFilter] = useState("Все");
  const [colorFilter, setColorFilter] = useState("Все");
+ const [showAddDialog, setShowAddDialog] = useState(false);
+ const [uploadedImage, setUploadedImage] = useState<{ file: File; preview: string } | null>(null);
  
  const { 
  wardrobeItems, 
@@ -71,14 +75,15 @@ export function WardrobeScreen() {
 
  // Filter and sort items (favorites pinned to top)
  const filteredItems = useMemo(() => {
+ const items_array = wardrobeItems || [];
  let items = wardrobeFilter === "all"
- ? wardrobeItems
- : wardrobeItems.filter((item) => item.category === wardrobeFilter);
+ ? items_array
+ : items_array.filter((item) => item.category === wardrobeFilter);
 
  // Apply style filter
  if (styleFilter !== "Все") {
  items = items.filter((item) => 
- item.tags.some((tag) => tag.toLowerCase().includes(styleFilter.toLowerCase()))
+ (item.tags || []).some((tag) => tag.toLowerCase().includes(styleFilter.toLowerCase()))
  );
  }
 
@@ -91,7 +96,7 @@ export function WardrobeScreen() {
  "Зима": "winter",
  };
  items = items.filter((item) => 
- item.tags.includes(seasonMap[seasonFilter] as ClothingItem["tags"][number])
+ (item.tags || []).includes(seasonMap[seasonFilter] as ClothingItem["tags"][number])
  );
  }
 
@@ -103,14 +108,15 @@ export function WardrobeScreen() {
  }
 
  // Sort: favorites first
+ const favorites = wardrobeFavorites || [];
  return items.sort((a, b) => {
- const aFav = wardrobeFavorites.includes(a.id);
- const bFav = wardrobeFavorites.includes(b.id);
+ const aFav = favorites.includes(a.id);
+ const bFav = favorites.includes(b.id);
  if (aFav && !bFav) return -1;
  if (!aFav && bFav) return 1;
  return 0;
  });
- }, [wardrobeItems, wardrobeFilter, wardrobeFavorites, styleFilter, seasonFilter, colorFilter]);
+ }, [(wardrobeItems || []), wardrobeFilter, (wardrobeFavorites || []), styleFilter, seasonFilter, colorFilter]);
 
  const handleGenerateOutfit = (item: ClothingItem) => {
  setActiveTab("chat");
@@ -247,34 +253,35 @@ export function WardrobeScreen() {
  ) : (
  <div className="grid grid-cols-3 gap-3">
  {filteredItems.map((item) => {
- const isFavorite = wardrobeFavorites.includes(item.id);
+ const isFavorite = (wardrobeFavorites || []).includes(item.id);
  return (
- <div key={item.id} className="flex flex-col gap-2">
- <button
- onClick={() => setSelectedItem(item)}
- className="w-full relative aspect-square bg-muted overflow-hidden rounded-2xl press-effect hover:shadow-md transition-shadow"
- >
- <Image
- src={item.imageUrl || "/placeholder.svg"}
- alt={item.name}
- fill
- className="object-cover"
- />
- <button
- onClick={(e) => {
- e.stopPropagation();
- toggleWardrobeFavorite(item.id);
- }}
- className={cn(
- "absolute top-2 right-2 size-7 rounded-full flex items-center justify-center transition-colors shadow-sm",
- isFavorite
- ? "bg-yellow-500 text-black"
- : "bg-black/50 text-white hover:bg-black/70"
- )}
- >
- <Star className="w-4 h-4" fill="currentColor" />
- </button>
- </button>
+             <div key={item.id} className="flex flex-col gap-2">
+                <div
+                className="w-full relative aspect-square bg-muted overflow-hidden rounded-2xl press-effect hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => setSelectedItem(item)}
+                >
+                <Image
+                 src={item.imageUrl || "/placeholder.svg"}
+                 alt={item.name}
+                 fill
+                 className="object-cover"
+                />
+                <button
+                onClick={(e) => {
+                 e.stopPropagation();
+                 toggleWardrobeFavorite(item.id);
+                }}
+                className={cn(
+                 "absolute top-2 right-2 size-7 rounded-full flex items-center justify-center transition-colors shadow-sm",
+                 isFavorite
+                 ? "bg-yellow-500 text-black"
+                 : "bg-black/50 text-white hover:bg-black/70"
+                )}
+                aria-label={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+                >
+                <Star className="w-4 h-4" fill="currentColor" />
+                </button>
+                </div>
  <p className="text-xs font-medium text-foreground text-center truncate px-1">
  {item.name}
  </p>
@@ -285,21 +292,7 @@ export function WardrobeScreen() {
  {/* Add New Item Button */}
  <div className="flex flex-col gap-2">
  <button
- onClick={() => {
- const newItem = {
- id: `item-${Date.now()}`,
- name: "Новая вещь",
- category: wardrobeFilter as any,
- imageUrl: "/placeholder.svg",
- brand: "Неизвестный бренд",
- price: 0,
- color: "Серый",
- style: "Casual",
- season: "Любой сезон",
- };
- addWardrobeItem(newItem);
- setSelectedItem(newItem);
- }}
+ onClick={() => setShowAddDialog(true)}
  className="w-full relative aspect-square bg-secondary rounded-2xl border-2 border-dashed border-muted-foreground hover:border-foreground hover:bg-secondary/70 transition-all flex items-center justify-center group"
  >
  <Plus className="w-8 h-8 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -346,8 +339,8 @@ export function WardrobeScreen() {
 
  {/* Tags */}
  <div className="flex flex-wrap gap-2 mt-4">
- {selectedItem.tags.map((tag) => (
- <Badge key={tag} variant="secondary">{tag}</Badge>
+ {(selectedItem.tags || []).map((tag, index) => (
+ <Badge key={`${tag}-${index}`} variant="secondary">{tag}</Badge>
  ))}
  </div>
 
@@ -380,6 +373,13 @@ export function WardrobeScreen() {
  )}
  </SheetContent>
  </Sheet>
+
+ {/* Add Item Dialog */}
+     <AddItemDialog
+ open={showAddDialog}
+ onOpenChange={setShowAddDialog}
+ defaultCategory={wardrobeFilter === "all" ? "tops" : wardrobeFilter as ClothingCategory}
+ />
  </div>
  );
 }

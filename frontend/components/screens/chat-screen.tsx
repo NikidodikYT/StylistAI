@@ -15,17 +15,15 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Send, ImagePlus, Check, X, Heart } from "lucide-react";
+import { Send, Check, X, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { OutfitSuggestion } from "@/lib/types";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
+import { ImageUploadInput } from "@/components/image-upload-input";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { ImagePlus } from "lucide-react"; // Declaration of ImagePlus
 
 // ============================================
 // Types for Flat Message Rendering
@@ -34,7 +32,7 @@ import {
 // - TEXT: обычное текстовое сообщение
 // - OUTFIT_GROUP: карусель с образами для оценки
 type FlatMessageItem = 
- | { type: "TEXT"; id: string; content: string; sender: "user" | "ai"; timestamp: Date }
+ | { type: "TEXT"; id: string; content: string; sender: "user" | "ai"; timestamp: Date; attachments?: string[] }
  | { type: "OUTFIT_GROUP"; id: string; suggestions: OutfitSuggestion[] };
 
 // ============================================
@@ -81,14 +79,47 @@ function TypingIndicator() {
 // ============================================
 // TextBubble Component (max-width 75%)
 // ============================================
-function TextBubble({ content, sender, timestamp }: { content: string; sender: "user" | "ai"; timestamp: Date }) {
+function TextBubble({ content, sender, timestamp, attachments }: { content: string; sender: "user" | "ai"; timestamp: Date; attachments?: string[] }) {
  const isUser = sender === "user";
- 
+ const hasAttachments = attachments && attachments.length > 0;
+ const hasText = content && content.trim().length > 0;
+
  return (
  <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
- <div className={cn("max-w-[80%] rounded-2xl px-3 py-2", isUser ? "bg-violet-600 text-white" : "bg-zinc-700 text-zinc-100")}>
- <p className="break-words text-sm leading-5">{content}</p>
- <p className="text-xs mt-1 opacity-70">{formatTime(timestamp)}</p>
+ <div
+ className={cn(
+ "max-w-[75%] rounded-2xl overflow-hidden",
+ isUser
+ ? "bg-violet-600 text-white"
+ : "bg-secondary text-secondary-foreground"
+ )}
+ >
+ {hasAttachments && (
+ <div className={cn("flex flex-col gap-0.5", hasText ? "" : "")}>
+ {attachments.map((src, idx) => (
+ // biome-ignore lint: using index as key for blob URLs
+ <div key={idx} className="relative w-[240px] sm:w-[280px] aspect-[3/4] bg-muted">
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ <img
+ src={src || "/placeholder.svg"}
+ alt="Attached image"
+ className="w-full h-full object-cover"
+ />
+ </div>
+ ))}
+ </div>
+ )}
+ <div className={cn("px-3 py-2", hasAttachments && !hasText ? "pt-0" : "")}>
+ {hasText && <p className="break-words text-sm leading-relaxed">{content}</p>}
+ <p
+ className={cn(
+ "text-[10px] mt-0.5 opacity-60 text-right",
+ hasAttachments && !hasText ? "pt-1" : ""
+ )}
+ >
+ {formatTime(timestamp)}
+ </p>
+ </div>
  </div>
  </div>
  );
@@ -245,6 +276,7 @@ function OutfitCarousel({ suggestions, onSave, onSkip }: {
 // ============================================
 export function ChatScreen() {
  const [inputValue, setInputValue] = useState("");
+ const [uploadedImage, setUploadedImage] = useState<{ file: File; preview: string } | null>(null);
  const messagesEndRef = useRef<HTMLDivElement>(null);
 
  const { 
@@ -266,6 +298,7 @@ export function ChatScreen() {
  content: msg.content,
  sender: msg.sender,
  timestamp: msg.timestamp,
+ attachments: msg.attachments,
  });
  
  if (msg.outfitSuggestions && msg.outfitSuggestions.length > 0) {
@@ -300,15 +333,17 @@ export function ChatScreen() {
 
  const handleSend = async (text?: string) => {
  const content = text || inputValue.trim();
- if (!content) return;
+ if (!content && !uploadedImage) return;
 
  addMessage({
  id: `msg-${Date.now()}`,
  content,
  sender: "user",
  timestamp: new Date(),
+ attachments: uploadedImage ? [uploadedImage.preview] : undefined,
  });
  setInputValue("");
+ setUploadedImage(null);
 
  setAiTyping(true);
  await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1000));
@@ -350,12 +385,14 @@ export function ChatScreen() {
  </div>
  </div>
 
- {/* Messages Area */}
- <div className="flex-1 overflow-y-auto px-3 pt-3 pb-20 space-y-3">
+ {/* Messages Area - flex-1 + min-h-0 ensures it shrinks properly in flex column */}
+ <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-3 space-y-3">
  {flatMessages.map((item) => {
  if (item.type === "TEXT") {
  return (
- <TextBubble key={item.id} content={item.content} sender={item.sender} timestamp={item.timestamp} />
+ <div key={item.id}>
+ <TextBubble content={item.content} sender={item.sender} timestamp={item.timestamp} attachments={item.attachments} />
+ </div>
  );
  }
  
@@ -369,12 +406,12 @@ export function ChatScreen() {
  
  return null;
  })}
- <div ref={messagesEndRef} />
  {isAiTyping && <TypingIndicator />}
+ <div ref={messagesEndRef} />
  </div>
 
- {/* Composer - fixed above bottom nav */}
- <div className="fixed bottom-[70px] left-0 right-0 bg-background border-t border-border">
+ {/* Composer - in-flow, flex-shrink-0 so it never collapses */}
+ <div className="flex-shrink-0 bg-background border-t border-border mb-[70px]">
  {/* Quick buttons row - centered */}
  <div className="flex gap-1.5 px-3 py-2 overflow-x-auto scrollbar-hide justify-center">
  {QUICK_BUTTONS.map((btn) => (
@@ -388,11 +425,37 @@ export function ChatScreen() {
  ))}
  </div>
 
+ {/* Image Preview */}
+ {uploadedImage && (
+ <div className="px-3 py-2 border-t border-border flex items-center gap-2 bg-secondary/50">
+ <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+ <Image
+ src={uploadedImage.preview || "/placeholder.svg"}
+ alt="Uploaded"
+ fill
+ className="object-cover"
+ />
+ </div>
+ <p className="text-xs text-muted-foreground flex-1 truncate">
+ {uploadedImage.file.name}
+ </p>
+ <button
+ onClick={() => setUploadedImage(null)}
+ className="text-muted-foreground hover:text-foreground transition-colors p-1"
+ title="Remove image"
+ >
+ <X size={16} />
+ </button>
+ </div>
+ )}
+
  {/* Input area */}
  <div className="flex items-center gap-1.5 px-3 py-2 border-t border-border">
- <Button size="sm" variant="ghost" className="h-9 w-9 rounded-full flex-shrink-0 p-0 text-muted-foreground hover:text-foreground">
- <ImagePlus size={18} />
- </Button>
+ <ImageUploadInput
+ variant="icon"
+ size="md"
+ onImageSelect={(file, preview) => setUploadedImage({ file, preview })}
+ />
  <Input
  value={inputValue}
  onChange={(e) => setInputValue(e.target.value)}
@@ -402,7 +465,7 @@ export function ChatScreen() {
  />
  <Button
  onClick={() => handleSend()}
- disabled={!inputValue.trim() || isAiTyping}
+ disabled={(!inputValue.trim() && !uploadedImage) || isAiTyping}
  size="sm"
  className="h-9 w-9 rounded-full flex-shrink-0 p-0 bg-primary hover:bg-primary/90 text-primary-foreground"
  >
