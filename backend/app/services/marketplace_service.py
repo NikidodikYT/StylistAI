@@ -1,5 +1,5 @@
 """
-Marketplace Service - агрегатор поиска с fallback стратегией
+Marketplace Service - агрегатор поиска
 """
 
 import asyncio
@@ -14,9 +14,20 @@ from app.services.hm_provider import hm_provider
 logger = logging.getLogger(__name__)
 
 
-class MarketplaceService:
-    """Сервис поиска похожих товаров с двухфазной стратегией."""
+def _dedupe_by_url(products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    seen = set()
+    out: List[Dict[str, Any]] = []
+    for p in products:
+        url = (p.get("url") or "").strip().lower()
+        key = url if url else (p.get("marketplace"), (p.get("name") or "").strip().lower(), p.get("price"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(p)
+    return out
 
+
+class MarketplaceService:
     def __init__(self):
         self.providers = {
             "google_shopping": serper_provider,
@@ -32,26 +43,21 @@ class MarketplaceService:
         search_query: str,
         max_results: int,
     ) -> List[Dict[str, Any]]:
-        """
-        Унифицированный вызов провайдера.
-        """
         try:
-            # PriceScout / ASOS / H&M
             if hasattr(provider, "search_products"):
                 results = await provider.search_products(search_query, max_results)
                 logger.info(f"[{mp}] returned {len(results)} products")
                 return results
-            # Serper
-            elif hasattr(provider, "search"):
-                # Для Serper используем strict=False (гибридный режим)
-                results = await provider.search(
-                    search_query, max_results, strict_mode=False
-                )
+
+            if hasattr(provider, "search"):
+                # Serper provider now enforces "cards only" internally (как у тебя было задумано)
+                results = await provider.search(search_query, max_results, strict_mode=True)
                 logger.info(f"[{mp}] returned {len(results)} products")
                 return results
-            else:
-                logger.warning(f"Provider '{mp}' has no search method")
-                return []
+
+            logger.warning(f"Provider '{mp}' has no search method")
+            return []
+
         except Exception as e:
             logger.error(f"Provider '{mp}' error: {e}", exc_info=True)
             return []
@@ -62,19 +68,10 @@ class MarketplaceService:
         marketplaces: Optional[List[str]] = None,
         max_results_per_marketplace: int = 10,
     ) -> List[Dict[str, Any]]:
-        """
-        Поиск товаров с двухфазной стратегией:
-        
-        1. Сначала пробуем прямые магазины (PriceScout, ASOS, H&M)
-        2. Если результатов мало - добавляем Google Shopping
-        3. Google Shopping работает в гибридном режиме:
-           - сначала только прямые ссылки
-           - если пусто - fallback на поисковые
-        """
-        
-        # По умолчанию - все источники, приоритет прямым магазинам
+        # ДЕМО/МВП: не включай pricescout по умолчанию, если он таймаутит.
+        # Лучше вернуть быстро 2-5 результатов, чем ждать и получить 0.
         if not marketplaces:
-            marketplaces = ["pricescout", "asos", "hm", "google_shopping"]
+            marketplaces = ["asos", "google_shopping", "hm", "pricescout"]
 
         logger.info(f"Searching in: {marketplaces}")
 
@@ -84,15 +81,12 @@ class MarketplaceService:
             if not provider:
                 logger.warning(f"Unknown marketplace: {mp}")
                 continue
-            
-            # Проверяем enabled только для провайдеров, у которых это есть
+
             if hasattr(provider, "enabled") and not provider.enabled:
                 logger.warning(f"Provider {mp} is disabled")
                 continue
-            
-            tasks.append(
-                self._run_provider(mp, provider, search_query, max_results_per_marketplace)
-            )
+
+            tasks.append(self._run_provider(mp, provider, search_query, max_results_per_marketplace))
 
         if not tasks:
             logger.warning("No enabled providers")
@@ -108,7 +102,9 @@ class MarketplaceService:
             if isinstance(result, list):
                 all_products.extend(result)
 
-        logger.info(f"Total products found: {len(all_products)}")
+        all_products = _dedupe_by_url(all_products)
+
+        logger.info(f"Total products found (deduped): {len(all_products)}")
         return all_products
 
 

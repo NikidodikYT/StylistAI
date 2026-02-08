@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 
 class ClothingAnalysis(BaseModel):
     """Детальный анализ одежды от Gemini."""
-    
     category: str = Field(..., description="Main clothing category")
     subcategory: Optional[str] = Field(None, description="Specific type")
     colors: List[str] = Field(default_factory=list, description="Dominant colors")
@@ -47,13 +46,13 @@ class FindSimilarRequest(BaseModel):
         json_schema_extra={"example": ["pricescout", "asos", "hm", "google_shopping"]}
     )
     max_results_per_marketplace: int = Field(
-        default=15,  # ← Увеличил с 10 до 15 для большего покрытия
+        default=15,
         description="Max results per marketplace",
         ge=1,
         le=50
     )
     min_similarity_score: float = Field(
-        default=35.0,  # ← Поднял с 20 до 35 для качественной фильтрации
+        default=35.0,
         description="Minimum similarity score (0-100)",
         ge=0,
         le=100
@@ -62,7 +61,6 @@ class FindSimilarRequest(BaseModel):
 
 class SimilarProduct(BaseModel):
     """Товар из маркетплейса с similarity score."""
-    
     name: str
     price: float
     currency: str
@@ -113,3 +111,131 @@ class AnalysisListItem(BaseModel):
 class AnalysisListResponse(BaseModel):
     total: int
     analyses: List[AnalysisListItem]
+
+
+# ============================================================
+# НОВЫЕ СХЕМЫ ДЛЯ ГЕНЕРАЦИИ ОБРАЗОВ
+# ============================================================
+
+class OutfitSlot(BaseModel):
+    """Слот образа (top/bottom/shoes/outerwear/accessory)."""
+    slot_type: str = Field(
+        ...,
+        description="Тип слота: top, bottom, shoes, outerwear, accessory"
+    )
+    description: str = Field(
+        ...,
+        description="Описание идеальной вещи для этого слота"
+    )
+    search_query: str = Field(
+        ...,
+        description="Поисковый запрос для маркетплейсов"
+    )
+    must_have: List[str] = Field(
+        default_factory=list,
+        description="Обязательные ключевые слова (для фильтрации)"
+    )
+    must_not_have: List[str] = Field(
+        default_factory=list,
+        description="Запрещённые слова (минус-слова)"
+    )
+    color_palette: List[str] = Field(
+        default_factory=list,
+        description="Подходящие цвета для слота"
+    )
+    products: List[SimilarProduct] = Field(
+        default_factory=list,
+        description="Найденные товары для этого слота"
+    )
+
+
+class SingleOutfit(BaseModel):
+    """Один полный образ."""
+    outfit_name: str = Field(..., description="Название образа")
+    description: str = Field(..., description="Описание концепции образа")
+    slots: List[OutfitSlot] = Field(..., description="Слоты образа")
+    total_products_found: int = Field(
+        default=0,
+        description="Всего товаров найдено для этого образа"
+    )
+
+
+class OutfitFromItemRequest(BaseModel):
+    """Запрос: сборка образов вокруг конкретной вещи из гардероба."""
+    item_id: int = Field(..., description="ID вещи из гардероба")
+    style: Optional[str] = Field(
+        None,
+        description="Стиль образа (old money, streetwear, etc.) - опционально"
+    )
+    outfits_count: int = Field(
+        default=3,
+        description="Количество образов",
+        ge=1,
+        le=5
+    )
+    budget: Optional[str] = Field(
+        None,
+        description="Бюджет: low, mid, high - опционально"
+    )
+    marketplaces: List[str] = Field(
+        default=["asos", "hm", "google_shopping"],
+        description="Маркетплейсы для поиска товаров"
+    )
+    max_results_per_slot: int = Field(
+        default=4,
+        description="Максимум товаров на слот",
+        ge=2,
+        le=10
+    )
+
+
+class OutfitFromStyleRequest(BaseModel):
+    """Запрос: сборка образов с нуля по стилю."""
+    style: str = Field(
+        ...,
+        description="Стиль образа: old money, streetwear, techwear, minimalist, etc."
+    )
+    gender: str = Field(
+        default="men",
+        description="Пол: men, women, unisex"
+    )
+    season: Optional[str] = Field(
+        None,
+        description="Сезон: spring, summer, autumn, winter - опционально"
+    )
+    outfits_count: int = Field(
+        default=3,
+        description="Количество образов",
+        ge=1,
+        le=5
+    )
+    budget: Optional[str] = Field(
+        None,
+        description="Бюджет: low, mid, high - опционально"
+    )
+    marketplaces: List[str] = Field(
+        default=["asos", "hm", "google_shopping"],
+        description="Маркетплейсы для поиска товаров"
+    )
+    max_results_per_slot: int = Field(
+        default=4,
+        description="Максимум товаров на слот",
+        ge=2,
+        le=10
+    )
+
+
+class BuildOutfitResponse(BaseModel):
+    """Ответ: сгенерированные образы."""
+    success: bool
+    base_item: Optional[ClothingItemInfo] = Field(
+        None,
+        description="Базовая вещь (если from-item)"
+    )
+    style: str = Field(..., description="Стиль образов")
+    outfits: List[SingleOutfit] = Field(..., description="Сгенерированные образы")
+    total_outfits: int = Field(..., description="Количество образов")
+    total_products_found: int = Field(
+        default=0,
+        description="Всего товаров найдено"
+    )
