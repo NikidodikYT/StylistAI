@@ -1,5 +1,25 @@
 "use client";
 
+/**
+ * WardrobeScreen Component
+ * 
+ * Экран управления гардеробом пользователя.
+ * Основной функционал:
+ * - Просмотр всех вещей в гардеробе (3 колонки)
+ * - Фильтрация по категориям (Верх, Низ, Обувь, Верхняя одежда, Аксессуары)
+ * - Дополнительные фильтры по стилю, сезону, цвету
+ * - Добавление в избранное (звёздочка на карточке)
+ * - Редактирование деталей вещи (клик на карточку открывает панель)
+ * - Удаление вещей из гардероба
+ * - Добавление новых вещей (серый квадратик с плюсиком в конце списка)
+ * 
+ * Структура:
+ * - Header: название, фильтры, категории
+ * - Filters Panel: опциональная панель с доп. фильтрами
+ * - Grid: сетка 3x3 с вещами и кнопкой "Добавить"
+ * - Details Panel: боковая панель для редактирования деталей вещи
+ */
+
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import { Plus, Sparkles, Pencil, Trash2, Star, Filter, X, ChevronDown } from "lucide-react";
@@ -14,7 +34,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/store";
 import { CATEGORY_LABELS, type ClothingCategory, type ClothingItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { addWardrobeItem } from "@/lib/actions"; // Функция для добавления новой вещи в гардероб
 
+// Категории одежды для фильтрации
 const categories: ClothingCategory[] = ["all", "tops", "bottoms", "shoes", "outerwear", "accessories"];
 
 // Filter options
@@ -103,19 +125,13 @@ export function WardrobeScreen() {
  <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3">
  <div className="flex items-center justify-between">
  <h1 className="text-xl font-bold text-foreground">Гардероб</h1>
- <div className="flex gap-2">
  <button
  onClick={() => setShowFilters(!showFilters)}
- className="p-2 hover:bg-secondary rounded-lg transition-colors"
+ className="p-2 hover:bg-secondary rounded-lg transition-colors relative"
  >
  <Filter className="w-5 h-5 text-foreground" />
- {hasActiveFilters && <span className="absolute w-2 h-2 bg-primary rounded-full" />}
+ {hasActiveFilters && <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
  </button>
- 
- <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
- <Plus className="w-5 h-5 text-foreground" />
- </button>
- </div>
  </div>
  
 
@@ -265,6 +281,33 @@ export function WardrobeScreen() {
  </div>
  );
  })}
+ 
+ {/* Add New Item Button */}
+ <div className="flex flex-col gap-2">
+ <button
+ onClick={() => {
+ const newItem = {
+ id: `item-${Date.now()}`,
+ name: "Новая вещь",
+ category: wardrobeFilter as any,
+ imageUrl: "/placeholder.svg",
+ brand: "Неизвестный бренд",
+ price: 0,
+ color: "Серый",
+ style: "Casual",
+ season: "Любой сезон",
+ };
+ addWardrobeItem(newItem);
+ setSelectedItem(newItem);
+ }}
+ className="w-full relative aspect-square bg-secondary rounded-2xl border-2 border-dashed border-muted-foreground hover:border-foreground hover:bg-secondary/70 transition-all flex items-center justify-center group"
+ >
+ <Plus className="w-8 h-8 text-muted-foreground group-hover:text-foreground transition-colors" />
+ </button>
+ <p className="text-xs font-medium text-muted-foreground text-center">
+ Добавить
+ </p>
+ </div>
  </div>
  )}
  </div>

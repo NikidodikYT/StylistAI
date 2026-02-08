@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * ChatScreen Component
+ * 
+ * Главный компонент чата с AI стилистом.
+ * Функционал:
+ * - Отправка сообщений пользователем
+ * - Получение рекомендаций по образам от AI
+ * - Карусель для просмотра предложенных образов
+ * - Оценка образов (лайк/пропуск)
+ * - Новые образы генерируются при каждом новом запросе
+ * - Оценённые образы не повторяются даже при новых запросах
+ */
+
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Send, ImagePlus, Check, X, Heart } from "lucide-react";
@@ -17,6 +30,9 @@ import {
 // ============================================
 // Types for Flat Message Rendering
 // ============================================
+// FlatMessageItem: Структура для отображения сообщений и карусели образов
+// - TEXT: обычное текстовое сообщение
+// - OUTFIT_GROUP: карусель с образами для оценки
 type FlatMessageItem = 
  | { type: "TEXT"; id: string; content: string; sender: "user" | "ai"; timestamp: Date }
  | { type: "OUTFIT_GROUP"; id: string; suggestions: OutfitSuggestion[] };
@@ -335,7 +351,7 @@ export function ChatScreen() {
  </div>
 
  {/* Messages Area */}
- <div className="flex-1 overflow-y-auto px-3 pt-3 pb-3 space-y-3">
+ <div className="flex-1 overflow-y-auto px-3 pt-3 pb-20 space-y-3">
  {flatMessages.map((item) => {
  if (item.type === "TEXT") {
  return (
