@@ -38,21 +38,41 @@ interface SettingsItemProps {
 }
 
 function SettingsItem({ icon: Icon, label, value, onClick, trailing }: SettingsItemProps) {
- return (
- <button
- onClick={onClick}
- className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary rounded-lg transition-colors"
- >
- <div className="flex items-center gap-3">
- <Icon className="w-5 h-5 text-primary" />
- <div className="text-left">
- <p className="text-sm font-medium text-foreground">{label}</p>
- {value && <p className="text-xs text-muted-foreground">{value}</p>}
- </div>
- </div>
- {trailing || (onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />)}
- </button>
- );
+  const isClickable = !!onClick && !trailing;
+
+  const commonClass =
+    "w-full flex items-center justify-between px-4 py-3 hover:bg-secondary rounded-lg transition-colors";
+
+  if (isClickable) {
+    return (
+      <button onClick={onClick} className={commonClass} type="button">
+        <div className="flex items-center gap-3">
+          <Icon className="w-5 h-5 text-primary" />
+          <div className="text-left">
+            <p className="text-sm font-medium text-foreground">{label}</p>
+            {value && <p className="text-xs text-muted-foreground">{value}</p>}
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      </button>
+    );
+  }
+
+  // trailing есть (Switch) => НЕ button, а div
+  return (
+    <div className={commonClass}>
+      <div className="flex items-center gap-3">
+        <Icon className="w-5 h-5 text-primary" />
+        <div className="text-left">
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          {value && <p className="text-xs text-muted-foreground">{value}</p>}
+        </div>
+      </div>
+
+      {/* чтобы клик по Switch не триггерил родителя (на будущее) */}
+      <div onClick={(e) => e.stopPropagation()}>{trailing}</div>
+    </div>
+  );
 }
 
 export function ProfileScreen() {

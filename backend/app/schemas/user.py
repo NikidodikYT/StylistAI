@@ -5,7 +5,7 @@ class UserCreate(BaseModel):
     """Схема для создания пользователя"""
     email: EmailStr
     password: constr(min_length=8)
-    username: str  # Сделал обязательным
+    username: str 
     full_name: Optional[str] = None
     gender: Optional[str] = None
     age: Optional[int] = None
@@ -23,7 +23,7 @@ class UserResponse(BaseModel):
     is_active: bool
     
     class Config:
-        from_attributes = True  # Для Pydantic v2 (раньше было orm_mode)
+        from_attributes = True 
 
 class UserUpdate(BaseModel):
     """Схема для обновления профиля"""

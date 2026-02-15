@@ -2,24 +2,15 @@ from typing import List, Optional
 from pathlib import Path
 import uuid
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    UploadFile,
-    File,
-    status,
-    Query,
-)
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.core.security import get_current_user
 from app.models.user import User
 from app.schemas.clothing import ClothingItemResponse, ClothingItemCreate
 from app.services.clothing_service import clothing_service
-from app.api.v1.auth import get_current_user
-
 
 router = APIRouter()
 
@@ -35,11 +26,7 @@ class WardrobeListResponse(BaseModel):
         orm_mode = True
 
 
-@router.post(
-    "/upload",
-    response_model=ClothingItemResponse,
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post("/upload", response_model=ClothingItemResponse, status_code=status.HTTP_201_CREATED)
 async def upload_clothing(
     file: UploadFile = File(...),
     category: Optional[str] = None,
@@ -49,16 +36,10 @@ async def upload_clothing(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Загрузить фото одежды в гардероб.
-    """
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image",
-        )
+        raise HTTPException(status_code=400, detail="File must be an image")
 
-    file_extension = file.filename.split(".")[-1]
+    file_extension = (file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg")
     unique_filename = f"{uuid.uuid4()}.{file_extension}"
     file_path = UPLOAD_DIR / unique_filename
 
@@ -93,10 +74,6 @@ async def get_my_wardrobe(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Получить мой гардероб с фильтрацией.
-    Тест ожидает объект с ключом "items".
-    """
     items = await clothing_service.get_user_wardrobe(
         db=db,
         user_id=current_user.id,
@@ -107,10 +84,7 @@ async def get_my_wardrobe(
         brand=brand,
     )
 
-    return WardrobeListResponse(
-        total=len(items),
-        items=items,
-    )
+    return WardrobeListResponse(total=len(items), items=items)
 
 
 @router.get("/{item_id}", response_model=ClothingItemResponse)
@@ -119,21 +93,9 @@ async def get_clothing_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Получить конкретный предмет одежды.
-    """
-    item = await clothing_service.get_clothing_item(
-        db=db,
-        item_id=item_id,
-        user_id=current_user.id,
-    )
-
+    item = await clothing_service.get_clothing_item(db=db, item_id=item_id, user_id=current_user.id)
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Clothing item not found",
-        )
-
+        raise HTTPException(status_code=404, detail="Clothing item not found")
     return item
 
 
@@ -143,17 +105,6 @@ async def delete_clothing_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Удалить предмет одежды.
-    """
-    success = await clothing_service.delete_clothing_item(
-        db=db,
-        item_id=item_id,
-        user_id=current_user.id,
-    )
-
+    success = await clothing_service.delete_clothing_item(db=db, item_id=item_id, user_id=current_user.id)
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Clothing item not found",
-        )
+        raise HTTPException(status_code=404, detail="Clothing item not found")

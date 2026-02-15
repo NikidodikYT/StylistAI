@@ -493,7 +493,6 @@ async def find_similar_products(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
-    # последний анализ
     result = await db.execute(
         select(AIAnalysis)
         .where(AIAnalysis.clothing_item_id == item.id)
@@ -516,7 +515,6 @@ async def find_similar_products(
     search_query = build_search_query(item, analysis_data)
     logger.info(f"Search query: '{search_query}'")
 
-    # определяем “varsity-режим” для доп. запросов
     category = (analysis_data.get("category") or item.category or "").lower()
     subcategory = (analysis_data.get("subcategory") or "").lower()
     desc = ((analysis_data.get("description") or "") + " " + (item.description or "")).lower()
@@ -533,7 +531,6 @@ async def find_similar_products(
 
         fallback_used = False
 
-        # fallback если прям 0 кандидатов
         if not raw_products:
             logger.warning("No products found, trying fallback with simplified query")
             fallback_query = analysis_data.get("category", "clothing")
@@ -567,13 +564,11 @@ async def find_similar_products(
                 fallback_used=False,
             )
 
-        # чистим мусорные ссылки
         clean_products = [
             p for p in raw_products
             if p.get("url") and "google.com/search" not in (p.get("url") or "")
         ]
 
-        # применяем минус-слова вручную
         minus_terms = extract_minus_terms(search_query)
         if minus_terms and clean_products:
             before = len(clean_products)
@@ -582,7 +577,6 @@ async def find_similar_products(
             if removed > 0:
                 logger.info(f"Removed {removed} products by minus-words: {minus_terms}")
 
-        # скорим
         scored_products = []
         for product in clean_products:
             product.setdefault("rating", None)
@@ -600,8 +594,6 @@ async def find_similar_products(
 
         logger.info(f"After filter (>={effective_min_score}): {len(passed)}/{len(scored_products)}")
 
-        # ГЛАВНЫЙ фикс: если никто не прошёл порог — не опускаем порог в 0 сразу,
-        # а пробуем 1-3 альтернативных запроса (синонимы varsity).
         if not passed and scored_products:
             logger.warning("No products passed filter; trying alternate queries before relaxing threshold")
 
@@ -651,7 +643,6 @@ async def find_similar_products(
 
             logger.info(f"After ALT SEARCH filter (>={effective_min_score}): {len(passed)}/{len(scored_products)}")
 
-        # только если и ALT SEARCH не помог — делаем relaxed fallback, но не возвращаем score=0
         relaxed_threshold_used = False
         if not passed and scored_products:
             logger.warning("No products passed filter, returning top 5 with relaxed threshold (but skipping score=0)")
