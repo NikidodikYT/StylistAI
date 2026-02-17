@@ -1,4 +1,4 @@
-# StyleSnap (MVP)
+# StyleSnap
 
 StyleSnap --- это fullstack-приложение персонального AI-стилиста.
 
